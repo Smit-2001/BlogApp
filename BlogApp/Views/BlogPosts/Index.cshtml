@@ -1,0 +1,220 @@
+﻿@model IEnumerable<BlogApp.Models.BlogPost>
+
+@{
+    ViewData["Title"] = "Blog Posts";
+    string sortOrder = ViewBag.SortOrder as string ?? "";
+}
+
+<style>
+    .blog-card-img {
+        height: 200px;
+        object-fit: cover;
+        width: 100%;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <h1 class="mb-0">Blog Posts</h1>
+
+    <div class="d-flex flex-column align-items-end" style="min-width: 300px; max-width: 350px; width: 50%;">
+        <form asp-action="Index" method="get" class="mb-2 w-100">
+            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+            <div class="input-group">
+                <input type="text" id="searchInput" name="searchString" class="form-control"
+                       placeholder="Please enter Title/Author/Category"
+                       value="@ViewBag.SearchString" />
+                <button class="btn btn-outline-secondary" type="submit">Search</button>
+            </div>
+        </form>
+
+        <form asp-action="Index" method="get" class="mb-2 w-100">
+            <input type="hidden" name="searchString" value="@ViewBag.SearchString" />
+            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+            <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                <option value="">Sort By...</option>
+                <option value="createdDate_asc" selected="@(ViewBag.SortOrder == "createdDate_asc")">Created Date (Asc)</option>
+                <option value="createdDate_desc" selected="@(ViewBag.SortOrder == "createdDate_desc")">Created Date (Desc)</option>
+                <option value="title_asc" selected="@(ViewBag.SortOrder == "title_asc")">Title (Asc)</option>
+                <option value="title_desc" selected="@(ViewBag.SortOrder == "title_desc")">Title (Desc)</option>
+                <option value="author_asc" selected="@(ViewBag.SortOrder == "author_asc")">Author (Asc)</option>
+                <option value="author_desc" selected="@(ViewBag.SortOrder == "author_desc")">Author (Desc)</option>
+                <option value="category_asc" selected="@(ViewBag.SortOrder == "category_asc")">Category (Asc)</option>
+                <option value="category_desc" selected="@(ViewBag.SortOrder == "category_desc")">Category (Desc)</option>
+            </select>
+        </form>
+
+        <form asp-action="Index" method="get" class="w-100">
+            <input type="hidden" name="searchString" value="@ViewBag.SearchString" />
+            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+            <select name="categoryId" class="form-select" onchange="this.form.submit()" asp-items="ViewBag.Categories">
+                <option value="">All Categories</option>
+            </select>
+        </form>
+
+        <div class="mt-2 w-100 text-end">
+            <a asp-action="Index" class="btn btn-outline-danger btn-sm">Clear Filters</a>
+        </div>
+    </div>
+</div>
+
+<p>
+    <a class="btn btn-primary mb-4" asp-action="Create">Create New</a>
+</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center w-100">
+        🚫 No posts match your filters.
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    @if (!string.IsNullOrEmpty(item.ImagePath))
+                    {
+                        <img src="@item.ImagePath" class="card-img-top blog-card-img" alt="Blog Image" />
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">By @item.Author</h6>
+                        @if (item.Category != null)
+                        {
+                            <p class="mb-1"><strong>Category:</strong> @item.Category.Name</p>
+                        }
+                        <p class="card-text">
+                            <small class="text-muted">Created: @item.CreatedDate.ToString("g")</small>
+                        </p>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <!-- Reactions -->
+                        <div class="d-flex gap-2 mb-2">
+                            <button class="btn btn-outline-primary btn-sm reaction-btn"
+                                    data-id="@item.Id" data-type="Like">
+                                👍 Like (<span id="like-count-@item.Id">@item.Reactions.Count(r => r.Type == "Like")</span>)
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm reaction-btn"
+                                    data-id="@item.Id" data-type="Love">
+                                ❤️ Love (<span id="love-count-@item.Id">@item.Reactions.Count(r => r.Type == "Love")</span>)
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm reaction-btn"
+                                    data-id="@item.Id" data-type="Haha">
+                                😂 Haha (<span id="haha-count-@item.Id">@item.Reactions.Count(r => r.Type == "Haha")</span>)
+                            </button>
+                        </div>
+                        <p class="mb-2">
+                            💬 Comments: <strong>@item.Comments.Count()</strong>
+                        </p>
+                        <!-- Existing CRUD buttons -->
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Pagination -->
+@if (Model.Any())
+{
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <form asp-action="Index" method="get" class="d-flex align-items-center">
+            <input type="hidden" name="searchString" value="@ViewBag.SearchString" />
+            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+            <input type="hidden" name="categoryId" value="@ViewBag.CategoryId" />
+            <input type="hidden" name="pageNumber" value="1" />
+
+            <label for="pageSize" class="me-2 fw-bold">Page Size:</label>
+            <select id="pageSize" name="pageSize" class="form-select form-select-sm"
+                    style="width: auto;" onchange="this.form.submit()">
+                <option value="3" selected="@(ViewBag.PageSize == 3)">3</option>
+                <option value="6" selected="@(ViewBag.PageSize == 6)">6</option>
+                <option value="9" selected="@(ViewBag.PageSize == 9)">9</option>
+            </select>
+        </form>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", new {
+                               pageNumber = ViewBag.CurrentPage - 1,
+                               pageSize = ViewBag.PageSize,
+                               searchString = ViewBag.SearchString,
+                               sortOrder = ViewBag.SortOrder,
+                               categoryId = ViewBag.CategoryId
+                           })">Previous</a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                            <a class="page-link"
+                               href="@Url.Action("Index", new {
+                                   pageNumber = i,
+                                   pageSize = ViewBag.PageSize,
+                                   searchString = ViewBag.SearchString,
+                                   sortOrder = ViewBag.SortOrder,
+                                   categoryId = ViewBag.CategoryId
+                               })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", new {
+                               pageNumber = ViewBag.CurrentPage + 1,
+                               pageSize = ViewBag.PageSize,
+                               searchString = ViewBag.SearchString,
+                               sortOrder = ViewBag.SortOrder,
+                               categoryId = ViewBag.CategoryId
+                           })">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".reaction-btn").click(function (e) {
+                e.preventDefault();
+                var blogPostId = $(this).data("id");
+                var type = $(this).data("type");
+
+                $.ajax({
+                    url: '@Url.Action("Add", "Reactions")',
+                    type: "POST",
+                    data: { blogPostId: blogPostId, type: type },
+                    success: function (data) {
+                        $("#like-count-" + blogPostId).text(0);
+                        $("#love-count-" + blogPostId).text(0);
+                        $("#haha-count-" + blogPostId).text(0);
+
+                        data.forEach(function (item) {
+                            if (item.type === "Like") {
+                                $("#like-count-" + blogPostId).text(item.count);
+                            }
+                            if (item.type === "Love") {
+                                $("#love-count-" + blogPostId).text(item.count);
+                            }
+                            if (item.type === "Haha") {
+                                $("#haha-count-" + blogPostId).text(item.count);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}
+

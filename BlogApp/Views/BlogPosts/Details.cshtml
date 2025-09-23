@@ -1,0 +1,137 @@
+﻿@model BlogApp.Models.BlogPost
+@{
+    ViewData["Title"] = "Blog Details";
+}
+
+<h1>@Model.Title</h1>
+<p><strong>By:</strong> @Model.Author</p>
+<p><strong>Category:</strong> @Model.Category?.Name</p>
+<p><strong>Created:</strong> @Model.CreatedDate.ToString("g")</p>
+
+@if (!string.IsNullOrEmpty(Model.ImagePath))
+{
+    <img src="@Model.ImagePath" alt="Blog Image" class="img-fluid mb-3" height="100px" width="100px" />
+}
+
+<p>@Model.Content</p>
+
+<hr />
+<h4>Reactions</h4>
+<div class="d-flex gap-2 mb-3" id="reaction-buttons">
+    <button class="btn btn-outline-primary btn-sm reaction-btn" data-type="Like">
+        👍 Like (<span id="like-count">@Model.Reactions.Count(r => r.Type == "Like")</span>)
+    </button>
+    <button class="btn btn-outline-danger btn-sm reaction-btn" data-type="Love">
+        ❤️ Love (<span id="love-count">@Model.Reactions.Count(r => r.Type == "Love")</span>)
+    </button>
+    <button class="btn btn-outline-warning btn-sm reaction-btn" data-type="Haha">
+        😂 Haha (<span id="haha-count">@Model.Reactions.Count(r => r.Type == "Haha")</span>)
+    </button>
+</div>
+
+<input type="hidden" id="blogPostId" value="@Model.Id" />
+
+<hr />
+<h4>Comments</h4>
+
+<!-- Display existing comments -->
+<div id="comments-list" class="mb-3">
+    @if (Model.Comments.Any())
+    {
+        foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedDate))
+        {
+            <div class="border rounded p-2 mb-2">
+                <strong>@comment.User.FullName</strong> <small class="text-muted">(@comment.CreatedDate.ToString("g"))</small>
+                <p>@comment.Content</p>
+            </div>
+        }
+    }
+    else
+    {
+        <p id="no-comments">No comments yet. Be the first to comment!</p>
+    }
+</div>
+
+<!-- Add new comment -->
+<form id="comment-form">
+    <div class="mb-2">
+        <textarea id="comment-content" class="form-control" placeholder="Write a comment..." required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Comment</button>
+</form>
+
+<a asp-action="Index" class="btn btn-secondary mt-3">Back to List</a>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            // Handle Reactions
+            $(".reaction-btn").click(function (e) {
+                e.preventDefault();
+
+                var blogPostId = $("#blogPostId").val();
+                var type = $(this).data("type");
+
+                $.ajax({
+                    url: '@Url.Action("Add", "Reactions")',
+                    type: "POST",
+                    data: { blogPostId: blogPostId, type: type },
+                    success: function (data) {
+                        if (data && data.length > 0) {
+                            // Reset counts
+                            $("#like-count").text(0);
+                            $("#love-count").text(0);
+                            $("#haha-count").text(0);
+
+                            // Update new counts
+                            data.forEach(function (item) {
+                                if (item.type === "Like") $("#like-count").text(item.count);
+                                if (item.type === "Love") $("#love-count").text(item.count);
+                                if (item.type === "Haha") $("#haha-count").text(item.count);
+                            });
+                        }
+                    },
+                    error: function () {
+                        alert("Error adding reaction. Please try again.");
+                    }
+                });
+            });
+
+            // Handle Comments
+            $("#comment-form").submit(function (e) {
+                e.preventDefault();
+
+                var blogPostId = $("#blogPostId").val();
+                var content = $("#comment-content").val();
+
+                $.ajax({
+                    url: '@Url.Action("Add", "Comments")',
+                    type: "POST",
+                    data: { blogPostId: blogPostId, content: content },
+                    success: function (data) {
+                        if (data && data.content) {
+
+                            // remove "No comments yet" text if exists
+                            $("#no-comments").remove();
+
+                            var newComment = `
+                            <div class="border rounded p-2 mb-2">
+                                <strong>${data.user}</strong>
+                                <small class="text-muted">(${data.createdDate})</small>
+                                <p>${data.content}</p>
+                            </div>`;
+
+                            $("#comments-list").prepend(newComment); // add new comment at top
+                            $("#comment-content").val(""); // clear input
+                        }
+                    },
+                    error: function () {
+                        alert("Error adding comment.");
+                    }
+                });
+            });
+        });
+    </script>
+}

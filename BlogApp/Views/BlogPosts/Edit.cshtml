@@ -1,0 +1,56 @@
+﻿@model BlogApp.Models.BlogPost
+@{
+    ViewData["Title"] = "Edit Blog Post";
+}
+
+<h1>Edit Blog Post</h1>
+
+<form asp-action="Edit" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <!-- Keep existing image path so it won't be lost if no new file uploaded -->
+    <input type="hidden" asp-for="ImagePath" />
+
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Author"></label>
+        <input asp-for="Author" class="form-control" />
+        <span asp-validation-for="Author" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Content"></label>
+        <textarea asp-for="Content" class="form-control"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CategoryId">Category</label>
+        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.Categories">
+            <option value="">-- Select Category --</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ImagePath))
+    {
+        <div class="form-group">
+            <label>Current Image:</label><br />
+            <img src="@Model.ImagePath" alt="Blog Image" width="200" />
+        </div>
+    }
+
+    <div class="form-group">
+        <label>Upload New Image (.jpeg, .jpg, .png)</label>
+        <!-- ⚠️ Do NOT use asp-for here, otherwise it will overwrite ImagePath -->
+        <input type="file" name="imageFile" class="form-control" />
+        <span asp-validation-for="ImagePath" class="text-danger"></span>
+    </div>
+
+    <br />
+    <button type="submit" class="btn btn-primary">Update</button>
+</form>
