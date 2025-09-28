@@ -1,0 +1,1 @@
+Developed a Blog Application in .NET Core MVC with Entity Framework Core and SQL Server. Implemented image upload, pagination, searching, sorting, and filtering for efficient blog management. Built login & registration with Identity and role-based authorization. Enabled likes/reactions and comments for user engagement on blog posts.
